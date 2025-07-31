@@ -1,2 +1,559 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search Puzzle Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .controls-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .puzzle-display {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            margin-top: 10px;
+        }
+
+        .puzzle-grid {
+            display: inline-block;
+            margin: 20px 0;
+            border: 2px solid #333;
+            background: white;
+        }
+
+        .puzzle-row {
+            display: flex;
+        }
+
+        .puzzle-cell {
+            width: 25px;
+            height: 25px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 14px;
+            background: white;
+        }
+
+        .word-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .word-list h3 {
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+        }
+
+        .words-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .word-item {
+            background: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            text-align: center;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .success {
+            color: #27ae60;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .puzzle-cell {
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Word Search Generator</h1>
+            <p>Create custom word search puzzles with downloadable PDF solutions</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls-panel">
+                <div class="form-group">
+                    <label>Grid Size</label>
+                    <div class="form-row">
+                        <div>
+                            <input type="number" id="rows" min="8" max="25" value="15" placeholder="Rows">
+                        </div>
+                        <div>
+                            <input type="number" id="cols" min="8" max="25" value="15" placeholder="Columns">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="words">Words (one per line)</label>
+                    <textarea id="words" placeholder="Enter words here, one per line:&#10;PUZZLE&#10;SEARCH&#10;CHALLENGE&#10;BRAIN&#10;GAME"></textarea>
+                    <div id="wordError" class="error"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="includeSolution" checked style="width: auto; margin-right: 10px;">
+                        Include solution page in PDF
+                    </label>
+                </div>
+                
+                <button class="btn" onclick="generatePuzzle()">Generate Puzzle</button>
+                <button class="btn btn-secondary" id="downloadBtn" onclick="downloadPDF()" disabled>Download PDF</button>
+                
+                <div id="status"></div>
+            </div>
+            
+            <div class="puzzle-display">
+                <div id="puzzleContainer">
+                    <h3>Your puzzle will appear here</h3>
+                    <p>Enter your words and click "Generate Puzzle" to create a word search</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPuzzle = null;
+        let currentSolution = null;
+        let placedWords = [];
+
+        class WordSearchGenerator {
+            constructor(rows, cols) {
+                this.rows = rows;
+                this.cols = cols;
+                this.grid = Array(rows).fill().map(() => Array(cols).fill(''));
+                this.solutionGrid = Array(rows).fill().map(() => Array(cols).fill(''));
+                this.placedWords = [];
+            }
+
+            placeWord(word, row, col, direction) {
+                const directions = {
+                    horizontal: [0, 1],
+                    vertical: [1, 0],
+                    diagonal: [1, 1],
+                    diagonalUp: [-1, 1],
+                    horizontalReverse: [0, -1],
+                    verticalReverse: [-1, 0],
+                    diagonalReverse: [-1, -1],
+                    diagonalUpReverse: [1, -1]
+                };
+
+                const [dr, dc] = directions[direction];
+                
+                for (let i = 0; i < word.length; i++) {
+                    const r = row + i * dr;
+                    const c = col + i * dc;
+                    this.grid[r][c] = word[i];
+                    this.solutionGrid[r][c] = word[i];
+                }
+            }
+
+            canPlaceWord(word, row, col, direction) {
+                const directions = {
+                    horizontal: [0, 1],
+                    vertical: [1, 0],
+                    diagonal: [1, 1],
+                    diagonalUp: [-1, 1],
+                    horizontalReverse: [0, -1],
+                    verticalReverse: [-1, 0],
+                    diagonalReverse: [-1, -1],
+                    diagonalUpReverse: [1, -1]
+                };
+
+                const [dr, dc] = directions[direction];
+
+                for (let i = 0; i < word.length; i++) {
+                    const r = row + i * dr;
+                    const c = col + i * dc;
+                    
+                    if (r < 0 || r >= this.rows || c < 0 || c >= this.cols) {
+                        return false;
+                    }
+                    
+                    if (this.grid[r][c] !== '' && this.grid[r][c] !== word[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            findWordPlacement(word) {
+                const directions = ['horizontal', 'vertical', 'diagonal', 'diagonalUp', 
+                                 'horizontalReverse', 'verticalReverse', 'diagonalReverse', 'diagonalUpReverse'];
+                const attempts = 500;
+
+                for (let attempt = 0; attempt < attempts; attempt++) {
+                    const direction = directions[Math.floor(Math.random() * directions.length)];
+                    const row = Math.floor(Math.random() * this.rows);
+                    const col = Math.floor(Math.random() * this.cols);
+
+                    if (this.canPlaceWord(word, row, col, direction)) {
+                        return { row, col, direction };
+                    }
+                }
+                return null;
+            }
+
+            fillEmptyCells() {
+                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                for (let i = 0; i < this.rows; i++) {
+                    for (let j = 0; j < this.cols; j++) {
+                        if (this.grid[i][j] === '') {
+                            this.grid[i][j] = letters[Math.floor(Math.random() * letters.length)];
+                        }
+                    }
+                }
+            }
+
+            generate(words) {
+                words = words.map(word => word.toUpperCase().trim()).filter(word => word.length > 0);
+                
+                // Sort words by length (longest first) for better placement
+                words.sort((a, b) => b.length - a.length);
+                
+                for (const word of words) {
+                    if (word.length > Math.max(this.rows, this.cols)) {
+                        continue; // Skip words that are too long
+                    }
+                    
+                    const placement = this.findWordPlacement(word);
+                    if (placement) {
+                        this.placeWord(word, placement.row, placement.col, placement.direction);
+                        this.placedWords.push({
+                            word: word,
+                            ...placement
+                        });
+                    }
+                }
+
+                this.fillEmptyCells();
+                return {
+                    puzzle: this.grid,
+                    solution: this.solutionGrid,
+                    placedWords: this.placedWords
+                };
+            }
+        }
+
+        function generatePuzzle() {
+            const rows = parseInt(document.getElementById('rows').value);
+            const cols = parseInt(document.getElementById('cols').value);
+            const wordsText = document.getElementById('words').value.trim();
+            
+            document.getElementById('wordError').textContent = '';
+            document.getElementById('status').textContent = '';
+            
+            if (!wordsText) {
+                document.getElementById('wordError').textContent = 'Please enter at least one word.';
+                return;
+            }
+            
+            const words = wordsText.split('\n').map(w => w.trim()).filter(w => w.length > 0);
+            
+            if (words.length === 0) {
+                document.getElementById('wordError').textContent = 'Please enter valid words.';
+                return;
+            }
+            
+            const maxLength = Math.max(rows, cols);
+            const tooLongWords = words.filter(word => word.length > maxLength);
+            if (tooLongWords.length > 0) {
+                document.getElementById('wordError').textContent = 
+                    `Words too long for grid: ${tooLongWords.join(', ')}`;
+                return;
+            }
+            
+            const generator = new WordSearchGenerator(rows, cols);
+            const result = generator.generate(words);
+            
+            currentPuzzle = result.puzzle;
+            currentSolution = result.solution;
+            placedWords = result.placedWords;
+            
+            displayPuzzle(result.puzzle, words);
+            document.getElementById('downloadBtn').disabled = false;
+            
+            const placedWordsList = result.placedWords.map(w => w.word);
+            const notPlaced = words.filter(word => !placedWordsList.includes(word.toUpperCase()));
+            
+            if (notPlaced.length > 0) {
+                document.getElementById('status').innerHTML = 
+                    `<div class="error">Could not place: ${notPlaced.join(', ')}</div>`;
+            } else {
+                document.getElementById('status').innerHTML = 
+                    `<div class="success">All ${words.length} words placed successfully!</div>`;
+            }
+        }
+
+        function displayPuzzle(grid, words) {
+            const container = document.getElementById('puzzleContainer');
+            
+            let html = '<div class="puzzle-grid">';
+            for (let i = 0; i < grid.length; i++) {
+                html += '<div class="puzzle-row">';
+                for (let j = 0; j < grid[i].length; j++) {
+                    html += `<div class="puzzle-cell">${grid[i][j]}</div>`;
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+            
+            html += '<div class="word-list">';
+            html += '<h3>Find These Words:</h3>';
+            html += '<div class="words-container">';
+            for (const word of words) {
+                html += `<div class="word-item">${word.toUpperCase()}</div>`;
+            }
+            html += '</div>';
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function downloadPDF() {
+            if (!currentPuzzle || !currentSolution) {
+                alert('Please generate a puzzle first!');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const includeSolution = document.getElementById('includeSolution').checked;
+            
+            // Title page with puzzle
+            doc.setFontSize(20);
+            doc.text('Word Search Puzzle', 105, 20, { align: 'center' });
+            
+            // Draw puzzle grid
+            const cellSize = 8;
+            const startX = 50;
+            const startY = 40;
+            
+            doc.setFontSize(10);
+            
+            for (let i = 0; i < currentPuzzle.length; i++) {
+                for (let j = 0; j < currentPuzzle[i].length; j++) {
+                    const x = startX + j * cellSize;
+                    const y = startY + i * cellSize;
+                    
+                    // Draw cell border
+                    doc.rect(x, y, cellSize, cellSize);
+                    
+                    // Add letter
+                    doc.text(currentPuzzle[i][j], x + cellSize/2, y + cellSize/2 + 2, { align: 'center' });
+                }
+            }
+            
+            // Word list
+            const words = document.getElementById('words').value.trim().split('\n')
+                .map(w => w.trim().toUpperCase()).filter(w => w.length > 0);
+            
+            doc.setFontSize(14);
+            doc.text('Find these words:', 20, startY + currentPuzzle.length * cellSize + 20);
+            
+            doc.setFontSize(11);
+            let wordY = startY + currentPuzzle.length * cellSize + 35;
+            let wordX = 20;
+            const wordsPerRow = 3;
+            
+            for (let i = 0; i < words.length; i++) {
+                if (i > 0 && i % wordsPerRow === 0) {
+                    wordY += 10;
+                    wordX = 20;
+                } else if (i > 0) {
+                    wordX += 60;
+                }
+                doc.text(words[i], wordX, wordY);
+            }
+            
+            // Only add solution page if checkbox is checked
+            if (includeSolution) {
+                doc.addPage();
+                doc.setFontSize(20);
+                doc.text('Solution', 105, 20, { align: 'center' });
+                
+                // Draw solution grid
+                for (let i = 0; i < currentSolution.length; i++) {
+                    for (let j = 0; j < currentSolution[i].length; j++) {
+                        const x = startX + j * cellSize;
+                        const y = startY + i * cellSize;
+                        
+                        // Highlight solution cells
+                        if (currentSolution[i][j] !== '') {
+                            doc.setFillColor(255, 255, 0); // Yellow highlight
+                            doc.rect(x, y, cellSize, cellSize, 'F');
+                        }
+                        
+                        // Draw cell border
+                        doc.rect(x, y, cellSize, cellSize);
+                        
+                        // Add letter
+                        doc.setFontSize(10);
+                        doc.text(currentPuzzle[i][j], x + cellSize/2, y + cellSize/2 + 2, { align: 'center' });
+                    }
+                }
+            }
+            
+            // Save the PDF with appropriate filename
+            const filename = includeSolution ? 'word-search-puzzle-with-solution.pdf' : 'word-search-puzzle.pdf';
+            doc.save(filename);
+        }
+
+        // Initialize with sample words
+        document.getElementById('words').value = 'PUZZLE\nSEARCH\nCHALLENGE\nBRAIN\nGAME\nFUN\nWORDS\nLETTERS';
+    </script>
+</body>
 </html>
